@@ -1,28 +1,32 @@
-import {useState} from 'react';
-import logo from './assets/images/logo-universal.png';
-import './App.css';
-import {Greet} from "../wailsjs/go/main/App";
+import React from "react";
 
 function App() {
-    const [resultText, setResultText] = useState("Please enter your name below 👇");
-    const [name, setName] = useState('');
-    const updateName = (e: any) => setName(e.target.value);
-    const updateResultText = (result: string) => setResultText(result);
+    const [networkData, setNetworkData] = React.useState({
+        bytesSent: 0,
+        bytesRecv: 0,
+        packetsSent: 0,
+        packetsRecv: 0,
+    });
 
-    function greet() {
-        Greet(name).then(updateResultText);
-    }
+    React.useEffect(() => {
+        (window as any).runtime.EventsOn("networkData", (data: any) => {
+            setNetworkData(data);
+        })
+
+        return () => {
+            (window as any).runtime.EventsOff("networkData");
+        }
+    }, [networkData]);
 
     return (
-        <div id="App">
-            <img src={logo} id="logo" alt="logo"/>
-            <div id="result" className="result">{resultText}</div>
-            <div id="input" className="input-box">
-                <input id="name" className="input" onChange={updateName} autoComplete="off" name="input" type="text"/>
-                <button className="btn" onClick={greet}>Greet</button>
-            </div>
+        <div>
+            <p>Network Usage</p>
+            <p>Bytes Sent: {networkData.bytesSent}</p>
+            <p>Bytes Recv: {networkData.bytesRecv}</p>
+            <p>Packets Sent: {networkData.packetsSent}</p>
+            <p>Packets Recv: {networkData.packetsRecv}</p>
         </div>
-    )
+    );
 }
 
-export default App
+export default App;
