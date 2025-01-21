@@ -3,6 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"time"
+
+	"github.com/shirou/gopsutil/v3/net"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App struct
@@ -19,9 +23,28 @@ func NewApp() *App {
 // so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+	go a.getNetworkUsage()
 }
 
-// Greet returns a greeting for the given name
-func (a *App) Greet(name string) string {
-	return fmt.Sprintf("Hello %s, It's show time!", name)
+// send network data to frontend
+func (a *App) getNetworkUsage() {
+	for {
+		status, err := net.IOCounters(false)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+
+		if len(status) > 0 {
+			data := map[string]interface{}{
+				"bytesSent":   status[0].BytesSent,
+				"bytesRecv":   status[0].BytesRecv,
+				"packetsSent": status[0].PacketsSent,
+				"packetsRecv": status[0].PacketsRecv,
+			}
+
+			runtime.EventsEmit(a.ctx, "networkData", data)
+		}
+		time.Sleep(1 * time.Second)
+	}
 }
